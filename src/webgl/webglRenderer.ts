@@ -1,14 +1,74 @@
 import {ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT} from '../config'
 import { initPhys } from '../ph/phys-wasm';
+import { ProgramInfo } from "../types";
 
-
-import * as VertexShader from './vert.glsl';
-import * as FragmentShader from './frag.glsl';
-
-
-export const renderWebgl = async (canvas: HTMLCanvasElement) => {
+export const init = async () => { 
   const particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
 
+  const { initParticles, moveParticles, getColorArray } = await initPhys();
+
+  initParticles(particles, 0, 0);
+  const colors = getColorArray(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
+
+  return {
+    particles,
+    colors,
+  }
+}
+
+export const initBuffers = (gl: WebGLRenderingContext, particles: Float32Array, colors: Float32Array) => {
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(particles), gl.DYNAMIC_DRAW);
+  
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+  const colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+
+  return {
+    position: positionBuffer,
+    color: colorBuffer,
+  };
+};
+
+
+export const drawScene = (
+  gl: WebGLRenderingContext,
+  programInfo: ProgramInfo,
+  buffers: WebGLBuffer,
+) => {
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clearDepth(1.0);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthFunc(gl.LEQUAL);
+
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  {
+    gl.bindBuffer(gl.ARRAY_BUFFER, (<any>buffers).position);
+    const attribLocation = gl.getAttribLocation(<WebGLProgram>programInfo.program, 'coordinate');
+    gl.vertexAttribPointer(attribLocation, 2, gl.FLOAT, false, 16, 0);
+    gl.enableVertexAttribArray(attribLocation);
+  }
+
+  {
+    gl.bindBuffer(gl.ARRAY_BUFFER, (<any>buffers).color);
+    const attribColor = gl.getAttribLocation(<WebGLProgram>programInfo.program, 'color');
+    gl.vertexAttribPointer(attribColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(attribColor);
+  }
+
+  gl.useProgram(programInfo.program);
+  
+  gl.drawArrays(gl.POINTS, 0 , PARTICLES_AMOUNT);
+};
+
+
+
+export const initWebgl = (canvas: HTMLCanvasElement) => {
   const webglConfig = {
     alpha: false,
     antialias: false
@@ -20,9 +80,12 @@ export const renderWebgl = async (canvas: HTMLCanvasElement) => {
     return;
   }
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
-  gl.clearColor(0, 0, 0, 1);
+  gl.viewport(0, 0, canvas.width , canvas.height);
 
+  return gl;
+}
+
+export const initProgram = (gl: WebGLRenderingContext) => {
   const program = gl.createProgram();
 
   if(!program) {
@@ -31,67 +94,71 @@ export const renderWebgl = async (canvas: HTMLCanvasElement) => {
     return;
   }
 
-  {
-    const shader = gl.createShader(gl.VERTEX_SHADER);
+  return program;
+}
 
-    if(!shader) {
-      console.log('Error while creating vertex shader');
-      
-      return;
-    }
+export const createShader = ( gl: WebGLRenderingContext, type: number, source: string) => {
+  const shader = gl.createShader(type);
 
-    gl.shaderSource(shader, VertexShader);
-    gl.compileShader(shader);
-
-    console.log(gl.getShaderInfoLog(shader));
-
-    gl.attachShader(program, shader);
+  if (!shader) {
+    return null;
   }
 
-  {
-    const shader = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(shader, source);
 
-    if(!shader) {
-      console.log('Error while creating vertex shader');
-      
-      return;
-    }
+  gl.compileShader(shader);
 
-    gl.shaderSource(shader, FragmentShader);
-    gl.compileShader(shader);
+  const status = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 
-    console.log(gl.getShaderInfoLog(shader));
+  if (!status) {
+    console.log("Can't compile shader ", gl.getShaderInfoLog(shader));
 
-    gl.attachShader(program, shader);
+    gl.deleteShader(shader);
+
+    return null;
   }
 
-  gl.linkProgram(program);
-  gl.useProgram(program);
+  return shader;
 
-  {
-    const attribLocation = gl.getAttribLocation(program, 'coordinate');
-    gl.vertexAttribPointer(attribLocation, 2, gl.FLOAT, false, 16, 0);
-    gl.enableVertexAttribArray(attribLocation);
+}
 
+
+export const initShaderProgram = (
+  gl: WebGLRenderingContext,
+  vertexShaderSource: string,
+  fragmentShaderSource: string
+): WebGLProgram | null => {
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+  if (!vertexShader || !fragmentShader) {
+    console.log("Can't load shader");
+    return null;
   }
 
-  const { initParticles, moveParticles } = await initPhys();
-  
-  initParticles(particles, 0, 0);
-  
-  gl.viewport(0, 0, canvas.width , canvas.height);
-  
-  const draw = () => {
-    moveParticles(particles);
-  
-    gl.bufferData(gl.ARRAY_BUFFER, particles.subarray(0, PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE), gl.DYNAMIC_DRAW);
-    gl.clearColor(1, 1, 1, 1)
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    
-    gl.drawArrays(gl.POINTS, 0 , PARTICLES_AMOUNT);
+  const shaderProgram = gl.createProgram();
 
-    requestAnimationFrame(draw);
+  if (!shaderProgram) {
+    return null;
   }
-  
-  draw();
-} 
+
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+
+  gl.linkProgram(shaderProgram);
+
+  const status = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+
+  if (!status) {
+    console.log(
+      "Unable to init the shader program: ",
+      gl.getProgramInfoLog(shaderProgram)
+    );
+
+    return null;
+  }
+
+  return shaderProgram;
+};
+
+

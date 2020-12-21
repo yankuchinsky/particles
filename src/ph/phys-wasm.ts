@@ -8,6 +8,8 @@ export const initPhys = async () => {
   return {
     initParticles: wasm.initParticles, 
     moveParticles: wasm.moveParticles,
+    getColor: wasm.getColor,
+    getColorArray: wasm.getColorArray,
   }
     
 }
