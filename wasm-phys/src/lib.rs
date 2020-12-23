@@ -88,9 +88,9 @@ pub extern fn getColorArray(count: u32) -> Vec<f32> {
 
   loop {
     
-    result.push((_rnd.gen::<f32>() * 255.0).round() as f32);
-    result.push((_rnd.gen::<f32>() * 255.0).round() as f32);
-    result.push((_rnd.gen::<f32>() * 255.0).round() as f32);
+    result.push(_rnd.gen::<f32>());
+    result.push(_rnd.gen::<f32>());
+    result.push(_rnd.gen::<f32>());
     result.push(1.0);
     i += 4;
 

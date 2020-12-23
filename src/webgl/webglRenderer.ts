@@ -8,7 +8,7 @@ export const init = async () => {
   const { initParticles, moveParticles, getColorArray } = await initPhys();
 
   initParticles(particles, 0, 0);
-  const colors = getColorArray(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
+  const colors = getColorArray(PARTICLES_AMOUNT * 3);
 
   return {
     particles,
@@ -57,7 +57,7 @@ export const drawScene = (
   {
     gl.bindBuffer(gl.ARRAY_BUFFER, (<any>buffers).color);
     const attribColor = gl.getAttribLocation(<WebGLProgram>programInfo.program, 'color');
-    gl.vertexAttribPointer(attribColor, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(attribColor, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(attribColor);
   }
 

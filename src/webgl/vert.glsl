@@ -1,9 +1,9 @@
 precision lowp float;
 
 attribute vec2 coordinate;
-attribute vec4 color;
+attribute vec3 color;
 
-varying lowp vec4 vColor;
+varying lowp vec3 vColor;
 
 void main() {
   gl_Position = vec4(

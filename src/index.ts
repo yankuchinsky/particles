@@ -24,7 +24,6 @@ const initCanvas = async () => {
 
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-
   const draw = () => {
     const shaderProgram = initShaderProgram(gl, VertexShader, FragmentShader);
 
