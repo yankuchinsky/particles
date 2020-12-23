@@ -91,8 +91,7 @@ pub extern fn getColorArray(count: u32) -> Vec<f32> {
     result.push(_rnd.gen::<f32>());
     result.push(_rnd.gen::<f32>());
     result.push(_rnd.gen::<f32>());
-    result.push(1.0);
-    i += 4;
+    i += 3;
 
     if i == count { break; }
   }
