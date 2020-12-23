@@ -1,30 +1,66 @@
-import { init, initBuffers, initWebgl, initShaderProgram, drawScene } from './webgl/webglRenderer'
+import { initBuffers, initWebgl, initShaderProgram, drawScene, clearScene } from './webgl/webglRenderer'
 import { initPhys } from './ph/phys-wasm';
 import { ProgramInfo } from "./types";
 
 import * as VertexShader from './webgl/vert.glsl';
 import * as FragmentShader from './webgl/frag.glsl';
+import { ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT, SUBPARTICLES_AMOUNT } from './config';
+
 
 const initCanvas = async () => {
   const canvas: HTMLCanvasElement | null = document.querySelector('#canvas');
-  const { moveParticles } = await initPhys();
+  const { initParticles, moveParticles, getColorArray, particlesToNewPoints, initParticlesWithPoints } = await initPhys();
+
+  let destroyTimer = 0;
+
+  const destroyTimeout = (func: Function) => setTimeout(() => {
+    if (destroyTimer < 6) {
+      destroyTimer += 1;
+    } else {
+      func();
+
+      return;
+    }
+
+    destroyTimeout(func);
+  }, 100);
   
+  
+  
+
   if (!canvas || !canvas.getContext) {
     return;
   }
 
-  const { particles, colors } = await init();
+  let particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
+  let points = new Float32Array(PARTICLES_AMOUNT * 2);
+
+  initParticles(particles, 0, 0.5);
+
+  let colors = getColorArray(PARTICLES_AMOUNT * 3);
+
   const gl = initWebgl(canvas); 
-  
+
+  const destroyParticles = () => {
+    points = particlesToNewPoints(particles);
+    particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE * SUBPARTICLES_AMOUNT);
+    
+    initParticlesWithPoints(particles, points, SUBPARTICLES_AMOUNT);
+    
+    colors = getColorArray(PARTICLES_AMOUNT * SUBPARTICLES_AMOUNT * 3);
+  }
+
   if(!gl) {
     return;
   }
 
-  gl.clearColor(1, 1, 1, 1);
-
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
   const draw = () => {
+    clearScene(gl);
+
+    if(!particles.length) {
+      return;
+    }
+
     const shaderProgram = initShaderProgram(gl, VertexShader, FragmentShader);
 
     if (!shaderProgram) {
@@ -40,13 +76,18 @@ const initCanvas = async () => {
     };
     
     const buffers = initBuffers(gl, particles, colors);
-    drawScene(gl, programInfo, buffers);
+    drawScene(gl, programInfo, buffers, particles.length / 4);
     moveParticles(particles);
     requestAnimationFrame(draw);
   }
 
   draw();
+
+  destroyTimeout(destroyParticles);
 }
+
+
+
 
 
 initCanvas();

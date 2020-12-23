@@ -10,6 +10,8 @@ export const initPhys = async () => {
     moveParticles: wasm.moveParticles,
     getColor: wasm.getColor,
     getColorArray: wasm.getColorArray,
+    particlesToNewPoints: wasm.particlesToNewPoints,
+    initParticlesWithPoints: wasm.initParticlesWithPoints,
   }
     
 }

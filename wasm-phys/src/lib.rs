@@ -30,6 +30,21 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
+#[wasm_bindgen]
+pub extern fn particlesToNewPoints(particles: Float32Array) -> Vec<f32> {
+  let mut i = 0;
+  let mut points = Vec::<f32>::new();
+
+  while i < particles.length() {
+
+    points.push(particles.get_index(i));
+    points.push(particles.get_index(i + 1));
+
+    i = i + 4;
+  }
+
+  return points;
+} 
 
 
 #[wasm_bindgen]
@@ -47,6 +62,35 @@ pub extern fn initParticles(particles: Float32Array, x:f32, y:f32) {
     
     particles.set_index(i + 2, ang.cos() * d / 1000.0);
     particles.set_index(i + 3, ang.sin() * d / 1000.0);
+
+    i = i + 4;
+  }
+}
+
+#[wasm_bindgen]
+pub extern fn initParticlesWithPoints(particles: Float32Array, points: Float32Array, sub_particles: i32) {
+  let mut i = 0;
+  let mut y = 0;
+  let mut ptc = 0;
+  let mut _rnd = rand::thread_rng();
+
+  while i < particles.length() {
+
+    particles.set_index(i, points.get_index(y));
+    particles.set_index(i + 1, points.get_index(y + 1));
+    
+    let d: f32 = _rnd.gen::<f32>().sqrt() * 10.0;
+    let ang: f32 = _rnd.gen::<f32>() * 3.14 * 20.0;
+    
+    particles.set_index(i + 2, ang.cos() * d / 1000.0);
+    particles.set_index(i + 3, ang.sin() * d / 1000.0);
+
+    if ptc == sub_particles {
+      ptc = 0;
+      y = y + 2;
+    } else {
+      ptc += 1;
+    }
 
     i = i + 4;
   }

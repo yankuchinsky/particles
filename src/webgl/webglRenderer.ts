@@ -2,19 +2,17 @@ import {ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT} from '../config'
 import { initPhys } from '../ph/phys-wasm';
 import { ProgramInfo } from "../types";
 
-export const init = async () => { 
-  const particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
+// export const init = async (particles: Float32Array) => {
+  
+//   initParticles(particles, 0, 0);
 
-  const { initParticles, moveParticles, getColorArray } = await initPhys();
+//   const colors = getColorArray(PARTICLES_AMOUNT * 3);
 
-  initParticles(particles, 0, 0);
-  const colors = getColorArray(PARTICLES_AMOUNT * 3);
-
-  return {
-    particles,
-    colors,
-  }
-}
+//   return {
+//     particles,
+//     colors,
+//   }
+// }
 
 export const initBuffers = (gl: WebGLRenderingContext, particles: Float32Array, colors: Float32Array) => {
   const positionBuffer = gl.createBuffer();
@@ -34,18 +32,23 @@ export const initBuffers = (gl: WebGLRenderingContext, particles: Float32Array, 
   };
 };
 
+export const clearScene = (gl: WebGLRenderingContext) => {
+   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+}
 
 export const drawScene = (
   gl: WebGLRenderingContext,
   programInfo: ProgramInfo,
   buffers: WebGLBuffer,
+  pointsCount: number,
 ) => {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
 
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  clearScene(gl);
+ 
 
   {
     gl.bindBuffer(gl.ARRAY_BUFFER, (<any>buffers).position);
@@ -63,7 +66,7 @@ export const drawScene = (
 
   gl.useProgram(programInfo.program);
   
-  gl.drawArrays(gl.POINTS, 0 , PARTICLES_AMOUNT);
+  gl.drawArrays(gl.POINTS, 0 , pointsCount);
 };
 
 
