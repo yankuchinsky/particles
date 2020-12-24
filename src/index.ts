@@ -6,27 +6,31 @@ import * as VertexShader from './webgl/vert.glsl';
 import * as FragmentShader from './webgl/frag.glsl';
 import { ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT, SUBPARTICLES_AMOUNT } from './config';
 
+const initDestruction = () => {
+  let destroyTimer = 0;
+
+  const destroyTimeout = (func: Function) => {
+    setTimeout(() => {
+      if (destroyTimer < 6) {
+        destroyTimer += 1;
+      } else {
+        func();
+
+        return;
+      }
+
+      destroyTimeout(func);
+    }, 100);
+  }
+  
+  return destroyTimeout;
+}
+
 
 const initCanvas = async () => {
   const canvas: HTMLCanvasElement | null = document.querySelector('#canvas');
-  const { initParticles, moveParticles, getColorArray, particlesToNewPoints, initParticlesWithPoints } = await initPhys();
-
-  let destroyTimer = 0;
-
-  const destroyTimeout = (func: Function) => setTimeout(() => {
-    if (destroyTimer < 6) {
-      destroyTimer += 1;
-    } else {
-      func();
-
-      return;
-    }
-
-    destroyTimeout(func);
-  }, 100);
-  
-  
-  
+  const { initParticles, moveParticles, getColorArray, particlesToNewPoints, initParticlesWithPoints } = await initPhys();  
+  const runDestructionTimer = initDestruction();
 
   if (!canvas || !canvas.getContext) {
     return;
@@ -83,7 +87,7 @@ const initCanvas = async () => {
 
   draw();
 
-  destroyTimeout(destroyParticles);
+  runDestructionTimer(destroyParticles);
 }
 
 
