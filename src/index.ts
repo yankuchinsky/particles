@@ -1,16 +1,18 @@
 import { initBuffers, initWebgl, initShaderProgram, drawScene, clearScene } from './webgl/webglRenderer'
-import { initPhys } from './ph/phys-wasm';
+import { initPhys } from './phys-wasm';
 import { ProgramInfo } from "./types";
 
 import * as VertexShader from './webgl/vert.glsl';
 import * as FragmentShader from './webgl/frag.glsl';
 import { ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT, SUBPARTICLES_AMOUNT } from './config';
 
+
 const initDestruction = () => {
   let destroyTimer = 0;
 
   const destroyTimeout = (func: Function) => {
     setTimeout(() => {
+      console.log("WORKING")
       if (destroyTimer < 6) {
         destroyTimer += 1;
       } else {
@@ -27,38 +29,55 @@ const initDestruction = () => {
 }
 
 
-const initCanvas = async () => {
+
+const bootstrap = async () => {
   const canvas: HTMLCanvasElement | null = document.querySelector('#canvas');
   const { initParticles, moveParticles, getColorArray, particlesToNewPoints, initParticlesWithPoints } = await initPhys();  
-  const runDestructionTimer = initDestruction();
 
   if (!canvas || !canvas.getContext) {
     return;
   }
-
-  let particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE);
-  let points = new Float32Array(PARTICLES_AMOUNT * 2);
-
-  initParticles(particles, 0, 0.5);
-
-  let colors = getColorArray(PARTICLES_AMOUNT * 3);
-
+  
   const gl = initWebgl(canvas); 
-
-  const destroyParticles = () => {
-    points = particlesToNewPoints(particles);
-    particles = new Float32Array(PARTICLES_AMOUNT * ARRAY_ELEMENT_SIZE * SUBPARTICLES_AMOUNT);
-    
-    initParticlesWithPoints(particles, points, SUBPARTICLES_AMOUNT);
-    
-    colors = getColorArray(PARTICLES_AMOUNT * SUBPARTICLES_AMOUNT * 3);
-  }
 
   if(!gl) {
     return;
   }
 
-  const draw = () => {
+  const initDataArrays = (amount: number, oldParticles?: Float32Array) => {
+    const particles = new Float32Array(amount * ARRAY_ELEMENT_SIZE);
+    const points = oldParticles ? particlesToNewPoints(oldParticles) : new Float32Array(amount * 2);
+    const colors = getColorArray(amount * 3);
+
+    return {
+      particles,
+      points,
+      colors,
+    }
+  }
+
+  const destroyParticles = () => {
+    ({ particles, points, colors } = initDataArrays(PARTICLES_AMOUNT * SUBPARTICLES_AMOUNT, particles));
+  
+    initParticlesWithPoints(particles, points, SUBPARTICLES_AMOUNT);
+  }
+
+  let xPos, yPos;
+
+  canvas.addEventListener('click', event => {
+    const { width, height } = canvas.getBoundingClientRect();
+
+    xPos = event.clientX / width - 0.5;
+    yPos = 0.5 - event.clientY / height;
+
+    runScene(xPos, yPos);
+    
+  })
+
+  // MAIN ASYNC INIT
+  let { particles, points, colors } = initDataArrays(PARTICLES_AMOUNT);
+  
+  const drawTick = () => {
     clearScene(gl);
 
     if(!particles.length) {
@@ -82,17 +101,29 @@ const initCanvas = async () => {
     const buffers = initBuffers(gl, particles, colors);
     drawScene(gl, programInfo, buffers, particles.length / 4);
     moveParticles(particles);
-    requestAnimationFrame(draw);
+    requestAnimationFrame(drawTick);
   }
 
-  draw();
+  const draw = (x: number, y: number) => {
+    initParticles(particles, x, y);
+    requestAnimationFrame(drawTick);
+  }
 
-  runDestructionTimer(destroyParticles);
+
+  const runScene = (x: number, y: number) => {
+    draw(x, y); 
+
+    const runDestructionTimer = initDestruction();
+
+    runDestructionTimer(destroyParticles);
+  }
+
+
 }
 
 
 
 
 
-initCanvas();
+bootstrap();
 

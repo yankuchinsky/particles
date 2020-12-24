@@ -1,18 +1,4 @@
-import {ARRAY_ELEMENT_SIZE, PARTICLES_AMOUNT} from '../config'
-import { initPhys } from '../ph/phys-wasm';
 import { ProgramInfo } from "../types";
-
-// export const init = async (particles: Float32Array) => {
-  
-//   initParticles(particles, 0, 0);
-
-//   const colors = getColorArray(PARTICLES_AMOUNT * 3);
-
-//   return {
-//     particles,
-//     colors,
-//   }
-// }
 
 export const initBuffers = (gl: WebGLRenderingContext, particles: Float32Array, colors: Float32Array) => {
   const positionBuffer = gl.createBuffer();
@@ -48,7 +34,6 @@ export const drawScene = (
   gl.depthFunc(gl.LEQUAL);
 
   clearScene(gl);
- 
 
   {
     gl.bindBuffer(gl.ARRAY_BUFFER, (<any>buffers).position);
@@ -140,7 +125,7 @@ export const initShaderProgram = (
   }
 
   const shaderProgram = gl.createProgram();
-
+  
   if (!shaderProgram) {
     return null;
   }
