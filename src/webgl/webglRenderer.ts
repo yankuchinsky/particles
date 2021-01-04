@@ -32,6 +32,7 @@ export const drawScene = (
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
+  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
   clearScene(gl);
 
@@ -67,8 +68,6 @@ export const initWebgl = (canvas: HTMLCanvasElement) => {
   if (!gl) {
     return;
   }
-
-  gl.viewport(0, 0, canvas.width , canvas.height);
 
   return gl;
 }

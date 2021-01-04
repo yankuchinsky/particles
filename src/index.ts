@@ -66,8 +66,8 @@ const bootstrap = async () => {
   canvas.addEventListener('click', event => {
     const { width, height } = canvas.getBoundingClientRect();
 
-    xPos = event.clientX / width - 0.5;
-    yPos = 0.5 - event.clientY / height;
+    xPos = event.clientX / width * 2 - 1;
+    yPos = 1 - event.clientY / height * 2;
 
     console.log("pos", xPos, yPos);
 
