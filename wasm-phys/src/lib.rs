@@ -6,6 +6,10 @@ use rand::Rng;
 use js_sys::{Float32Array};
 use wasm_bindgen::prelude::*;
 
+// #![feature(stdsimd)]
+// #![cfg(target_feature = "simd128")]
+// #![cfg(target_arch = "wasm32")]
+
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
 #[cfg(feature = "wee_alloc")]
@@ -66,6 +70,7 @@ pub extern fn initParticles(particles: Float32Array, x:f32, y:f32) {
     i = i + 4;
   }
 }
+
 
 #[wasm_bindgen]
 pub extern fn initParticlesWithPoints(particles: Float32Array, points: Float32Array, sub_particles: i32) {

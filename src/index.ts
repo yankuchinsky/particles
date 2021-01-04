@@ -12,7 +12,6 @@ const initDestruction = () => {
 
   const destroyTimeout = (func: Function) => {
     setTimeout(() => {
-      console.log("WORKING")
       if (destroyTimer < 6) {
         destroyTimer += 1;
       } else {
@@ -70,8 +69,9 @@ const bootstrap = async () => {
     xPos = event.clientX / width - 0.5;
     yPos = 0.5 - event.clientY / height;
 
+    console.log("pos", xPos, yPos);
+
     runScene(xPos, yPos);
-    
   })
 
   // MAIN ASYNC INIT
@@ -120,10 +120,6 @@ const bootstrap = async () => {
 
 
 }
-
-
-
-
 
 bootstrap();
 

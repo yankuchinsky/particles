@@ -1,7 +1,7 @@
 {
-  "name": "inline-boilerplate",
+  "name": "particles",
   "version": "1.0.0",
-  "description": "Typescript boilerplate for projects",
+  "description": "Webgl and WebAssembly project",
   "scripts": {
     "dev": "webpack-dev-server",
     "build": "cross-env NODE_ENV=production webpack"
